@@ -1,0 +1,15 @@
+#!/bin/sh
+
+PKG_NAME="${SYNOPKG_PKGNAME:-WOLManager}"
+PKG_ROOT="/var/packages/${PKG_NAME}"
+TARGET_DIR="${SYNOPKG_PKGDEST:-${PKG_ROOT}/target}"
+
+if [ -f "${TARGET_DIR}/ui/images/icon_64.png" ]; then
+  cp "${TARGET_DIR}/ui/images/icon_64.png" "${PKG_ROOT}/PACKAGE_ICON.PNG"
+fi
+
+if [ -f "${TARGET_DIR}/ui/images/icon_256.png" ]; then
+  cp "${TARGET_DIR}/ui/images/icon_256.png" "${PKG_ROOT}/PACKAGE_ICON_256.PNG"
+fi
+
+exit 0

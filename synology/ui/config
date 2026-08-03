@@ -1,0 +1,25 @@
+{
+  "wolmanager.js": {
+    "io.github.jerryt92.spk.wol": {
+      "type": "app",
+      "title": "WOL Manager",
+      "desc": "Wake on LAN Manager",
+      "appWindow": "io.github.jerryt92.spk.wol.MainWindow",
+      "depend": [
+        "io.github.jerryt92.spk.wol.MainWindow"
+      ],
+      "allUsers": false,
+      "allowMultiInstance": false,
+      "hidden": false,
+      "icon": "images/icon_256.png"
+    },
+    "io.github.jerryt92.spk.wol.MainWindow": {
+      "type": "lib",
+      "title": "WOL Manager",
+      "desc": "Wake on LAN Manager",
+      "icon": "images/icon_256.png",
+      "width": 1000,
+      "height": 720
+    }
+  }
+}

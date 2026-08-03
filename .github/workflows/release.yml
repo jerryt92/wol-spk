@@ -1,0 +1,82 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag, must match synology/INFO version, for example v1.0.0"
+        required: true
+        default: "v1.0.0"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish SPK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Read package metadata
+        id: meta
+        shell: bash
+        run: |
+          version="$(sed -n 's/^version="\([^"]*\)"/\1/p' synology/INFO)"
+          package="$(sed -n 's/^package="\([^"]*\)"/\1/p' synology/INFO)"
+          if [[ -z "${version}" || -z "${package}" ]]; then
+            echo "Failed to read package metadata from synology/INFO" >&2
+            exit 1
+          fi
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+          echo "package=${package}" >> "${GITHUB_OUTPUT}"
+          echo "spk=${package}-${version}-x86_64.spk" >> "${GITHUB_OUTPUT}"
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            tag="${{ inputs.tag }}"
+          else
+            tag="${GITHUB_REF_NAME}"
+          fi
+          expected_tag="v${version}"
+          if [[ "${tag}" != "${expected_tag}" ]]; then
+            echo "Release tag ${tag} does not match package version ${version}; expected ${expected_tag}" >&2
+            exit 1
+          fi
+          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build SPK
+        run: ./build.sh
+
+      - name: Verify artifact
+        shell: bash
+        run: |
+          test -f "build/${{ steps.meta.outputs.spk }}"
+          tar -tf "build/${{ steps.meta.outputs.spk }}" >/dev/null
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.meta.outputs.spk }}
+          path: build/${{ steps.meta.outputs.spk }}
+          if-no-files-found: error
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: WOL Manager ${{ steps.meta.outputs.version }}
+          tag_name: ${{ steps.meta.outputs.tag }}
+          files: build/${{ steps.meta.outputs.spk }}
+          generate_release_notes: true

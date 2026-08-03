@@ -1,0 +1,5 @@
+#!/bin/sh
+
+rm -f /var/packages/WOLManager/var/devices.json
+
+exit 0

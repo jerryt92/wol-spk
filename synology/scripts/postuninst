@@ -1,0 +1,8 @@
+#!/bin/sh
+
+PKG_NAME="${SYNOPKG_PKGNAME:-WOLManager}"
+PKG_ROOT="/var/packages/${PKG_NAME}"
+
+rm -f "${PKG_ROOT}/PACKAGE_ICON.PNG" "${PKG_ROOT}/PACKAGE_ICON_256.PNG"
+
+exit 0
