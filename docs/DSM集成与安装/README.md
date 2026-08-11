@@ -40,6 +40,8 @@ WOL Manager 是 DSM 7 原生 SPK 套件：
 
 应用仅检查和下载更新，不会自行覆盖已运行的套件。
 
+若要由 DSM 自动下载并安装更新，在「套件中心 → 设置 → 套件来源」添加 `https://jerryt92.github.io/wol-spk/index.json`；首次在 GitHub 仓库 Settings → Pages 中将 Source 设为 **GitHub Actions**。之后在套件中心开启自动更新即可。
+
 ## DSM 桌面入口
 
 套件入口配置位于 `synology/ui/config`，使用 DSM `app` 模式。点击主菜单图标后，DSM 会创建一个内部应用窗口，窗口内容由 `wolmanager.js` 嵌入 `/webman/3rdparty/WOLManager/index.cgi`。

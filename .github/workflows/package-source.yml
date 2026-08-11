@@ -1,0 +1,29 @@
+name: Publish Package Source
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - name: Build DSM package-source index
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          mkdir -p package-source
+          cat > package-source/index.json <<EOF
+          {"packages":[{"package":"WOLManager","version":"${version}","dname":"WOL Manager","description":"Wake on LAN Manager for Synology DSM","maintainer":"jerryt92","arch":"x86_64","os_min_ver":"7.0-40000","silent_upgrade":"yes","url":"https://github.com/jerryt92/wol-spk/releases/download/${GITHUB_REF_NAME}/WOLManager-${version}-x86_64.spk"}]}
+          EOF
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: package-source
+      - uses: actions/deploy-pages@v4

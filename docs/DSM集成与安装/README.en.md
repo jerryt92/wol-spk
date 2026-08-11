@@ -40,6 +40,8 @@ Each release must meet both requirements:
 
 The app only checks for and downloads updates; it never replaces a running package itself.
 
+For DSM-managed download and installation, add `https://jerryt92.github.io/wol-spk/index.json` in **Package Center → Settings → Package Sources** and set the repository's Settings → Pages source to **GitHub Actions** once. Then enable automatic updates in Package Center.
+
 ## DSM desktop entry
 
 The package entry is configured in `synology/ui/config` using DSM `app` mode. Clicking the main menu icon creates an internal DSM application window, and `wolmanager.js` embeds `/webman/3rdparty/WOLManager/index.cgi` inside that window.
