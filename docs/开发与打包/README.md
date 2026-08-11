@@ -13,7 +13,8 @@
 ├── internal/wol/          # WOL magic packet 生成和发送
 ├── synology/              # DSM SPK 元数据、脚本和 UI 入口
 ├── tools/icongen/         # DSM 图标生成工具
-├── build.sh               # 本地打包脚本
+├── build.sh               # macOS/Linux 本地打包脚本
+├── build.ps1              # Windows PowerShell 打包脚本
 └── docs/                  # 文档
 ```
 
@@ -61,10 +62,16 @@ GOCACHE=/private/tmp/wol-spk-gocache go test ./...
 GOCACHE=/private/tmp/wol-spk-gocache ./build.sh
 ```
 
+Windows PowerShell：
+
+```powershell
+./build.ps1
+```
+
 输出：
 
 ```text
-build/WOLManager-1.0.0-x86_64.spk
+build/<package>-<version>-x86_64.spk
 ```
 
 ## GitHub Release
@@ -77,14 +84,14 @@ build/WOLManager-1.0.0-x86_64.spk
 
 触发方式：
 
-- 推送 `v*` 标签，例如 `v1.0.0`
-- 在 GitHub Actions 页面手动运行 `Release`，输入 `v1.0.0`
+- 推送与 `synology/INFO` 中版本一致的 `v*` 标签。
+- 在 GitHub Actions 页面手动运行 `Release`，输入与该版本一致的标签。
 
 发布前建议先提交所有代码，然后创建并推送标签：
 
 ```sh
-git tag v1.0.0
-git push origin v1.0.0
+git tag v<version>
+git push origin v<version>
 ```
 
 流水线会自动执行：
@@ -92,15 +99,15 @@ git push origin v1.0.0
 - 安装 Go
 - 运行 `go test ./...`
 - 执行 `./build.sh`
-- 校验 `build/WOLManager-1.0.0-x86_64.spk`
+- 校验 `build/<package>-<version>-x86_64.spk`
 - 校验 Release 标签必须等于 `v` + `synology/INFO` 版本号
 - 创建 GitHub Release
 - 上传 SPK 到 Release 附件
 
-版本号和包名从 `synology/INFO` 读取，目前保持：
+包名和版本号只在 `synology/INFO` 中维护：
 
 ```text
-version="1.0.0"
+version="<version>"
 maintainer="jerryt92"
 ```
 

@@ -302,6 +302,7 @@
     let mode = 'ui';
     let lang = 'en';
     let loaded = false;
+    let synoToken = '';
 
     const messages = window.WOL_I18N || {};
 
@@ -417,15 +418,28 @@
     }
 
     async function api(action, payload) {
+      if (!synoToken) throw new Error('unauthorized');
       const init = payload ? {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(payload)
       } : {};
+      init.headers = {...(init.headers || {}), 'X-SYNO-TOKEN': synoToken};
       const res = await fetch(`index.cgi?action=${action}`, init);
       const data = await res.json();
       if (!res.ok) throw new Error(localizeError(data.error));
       return data;
+    }
+
+    async function getDsmSynoToken() {
+      const res = await fetch('/webapi/entry.cgi?api=SYNO.API.Auth&version=6&method=token', {
+        cache: 'no-store',
+        credentials: 'same-origin'
+      });
+      const data = await res.json();
+      const token = data && data.data && data.data.synotoken;
+      if (!res.ok || !data.success || !token) throw new Error('unauthorized');
+      return token;
     }
 
     function setStatus(text, kind = '') {
@@ -564,6 +578,7 @@
 
     async function load() {
       try {
+        synoToken = await getDsmSynoToken();
         const data = await api('list');
         devices = data.devices || [];
         loaded = true;

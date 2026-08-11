@@ -9,7 +9,7 @@ Record the actual environment before submission:
 | NAS model | TBD |
 | DSM version | TBD |
 | CPU architecture | x86_64 |
-| Package version | 1.0.0 |
+| Package version | `<version>` (from `synology/INFO`) |
 | Browser | TBD |
 | Network | Same LAN |
 
@@ -22,7 +22,7 @@ Steps:
 
 Expected result:
 
-- `build/WOLManager-1.0.0-x86_64.spk` exists.
+- `build/<package>-<version>-x86_64.spk` exists.
 - The SPK contains `INFO`, `package.tgz`, `scripts/`, `conf/`, `PACKAGE_ICON.PNG`, and `PACKAGE_ICON_256.PNG`.
 
 ## 2. Manual Installation
@@ -31,7 +31,7 @@ Steps:
 
 1. Open DSM Package Center.
 2. Click Manual Install.
-3. Select `WOLManager-1.0.0-x86_64.spk`.
+3. Select `<package>-<version>-x86_64.spk`.
 4. Complete installation.
 
 Expected result:
@@ -207,4 +207,3 @@ Expected result:
 - Reinstallation succeeds.
 - WOL Manager opens correctly.
 - Imported devices appear and can be used.
-

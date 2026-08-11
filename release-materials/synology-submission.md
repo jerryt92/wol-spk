@@ -8,7 +8,7 @@ Product category: Utilities
 
 Package ID: WOLManager
 
-Version: 1.0.0
+Version: `<version>` (from `synology/INFO`)
 
 Maintainer: jerryt92
 
@@ -84,7 +84,7 @@ The uninstall process removes the package data file. Users should export the dev
 
 ## Review Materials Checklist
 
-- [ ] SPK file: `build/WOLManager-1.0.0-x86_64.spk`
+- [ ] SPK file: `build/<package>-<version>-x86_64.spk`
 - [x] Package icon: `synology/PACKAGE_ICON.PNG`
 - [x] Package icon 256: `synology/PACKAGE_ICON_256.PNG`
 - [x] Screenshot: `release-materials/screenshots/01-device-list-ui-mode.png`
@@ -107,4 +107,3 @@ This screenshot shows the main DSM application window, device list, Wake button,
 File: `release-materials/screenshots/02-json-mode.png`
 
 This screenshot shows JSON mode for bulk editing, formatting, reload, import, and export workflows.
-

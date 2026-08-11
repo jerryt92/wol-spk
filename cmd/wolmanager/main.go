@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/cgi"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -27,8 +28,9 @@ var i18nJS []byte
 var imagesFS embed.FS
 
 type app struct {
-	store  *store.Store
-	images http.Handler
+	store        *store.Store
+	images       http.Handler
+	authenticate func(*http.Request) (string, error)
 }
 
 func main() {
@@ -37,15 +39,15 @@ func main() {
 		dataDir = "/var/packages/WOLManager/var"
 	}
 
-	images, err := fs.Sub(imagesFS, "images")
+	var authenticate func(*http.Request) (string, error)
+	if os.Getenv("GATEWAY_INTERFACE") != "" {
+		authenticate = authenticateDSM
+	}
+
+	handler, err := newApp(filepath.Join(dataDir, "devices.json"), authenticate)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
-	}
-
-	handler := &app{
-		store:  store.New(filepath.Join(dataDir, "devices.json")),
-		images: http.StripPrefix("/images/", http.FileServer(http.FS(images))),
 	}
 	if os.Getenv("GATEWAY_INTERFACE") != "" {
 		if err := cgi.Serve(handler); err != nil {
@@ -62,7 +64,28 @@ func main() {
 	}
 }
 
+func newApp(devicePath string, authenticate func(*http.Request) (string, error)) (*app, error) {
+	images, err := fs.Sub(imagesFS, "images")
+	if err != nil {
+		return nil, err
+	}
+	return &app{
+		store:        store.New(devicePath),
+		images:       http.StripPrefix("/images/", http.FileServer(http.FS(images))),
+		authenticate: authenticate,
+	}, nil
+}
+
 func (a *app) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	action := r.URL.Query().Get("action")
+	if action != "" && a.authenticate != nil {
+		user, err := a.authenticate(r)
+		if err != nil || strings.TrimSpace(user) == "" {
+			a.unauthorized(w, r)
+			return
+		}
+	}
+
 	if strings.HasPrefix(r.URL.Path, "/images/") {
 		a.images.ServeHTTP(w, r)
 		return
@@ -76,7 +99,6 @@ func (a *app) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	action := r.URL.Query().Get("action")
 	if action == "" {
 		a.page(w)
 		return
@@ -96,6 +118,58 @@ func (a *app) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	default:
 		http.Error(w, "unknown action", http.StatusNotFound)
 	}
+}
+
+func authenticateDSM(r *http.Request) (string, error) {
+	cmd := exec.Command("/usr/syno/synoman/webman/modules/authenticate.cgi")
+	if token := dsmSynoToken(r); token != "" {
+		cmd.Env = withEnvironment(os.Environ(), "HTTP_X_SYNO_TOKEN", token)
+	}
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "DSM authentication helper failed: %v (HTTP_COOKIE present: %t, REMOTE_ADDR present: %t, SERVER_ADDR present: %t)\n",
+			err,
+			os.Getenv("HTTP_COOKIE") != "",
+			os.Getenv("REMOTE_ADDR") != "",
+			os.Getenv("SERVER_ADDR") != "",
+		)
+		return "", err
+	}
+	user := strings.TrimSpace(string(output))
+	if user == "" {
+		fmt.Fprintf(os.Stderr, "DSM authentication helper returned no user (HTTP_COOKIE present: %t, REMOTE_ADDR present: %t, SERVER_ADDR present: %t)\n",
+			os.Getenv("HTTP_COOKIE") != "",
+			os.Getenv("REMOTE_ADDR") != "",
+			os.Getenv("SERVER_ADDR") != "",
+		)
+	}
+	return user, nil
+}
+
+func dsmSynoToken(r *http.Request) string {
+	if token := strings.TrimSpace(r.Header.Get("X-Syno-Token")); token != "" {
+		return token
+	}
+	return strings.TrimSpace(r.URL.Query().Get("SynoToken"))
+}
+
+func withEnvironment(environment []string, key, value string) []string {
+	prefix := key + "="
+	result := make([]string, 0, len(environment)+1)
+	for _, entry := range environment {
+		if !strings.HasPrefix(entry, prefix) {
+			result = append(result, entry)
+		}
+	}
+	return append(result, prefix+value)
+}
+
+func (a *app) unauthorized(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Query().Get("action") != "" {
+		writeError(w, fmt.Errorf("unauthorized"), http.StatusUnauthorized)
+		return
+	}
+	http.Error(w, "unauthorized", http.StatusUnauthorized)
 }
 
 func (a *app) page(w http.ResponseWriter) {

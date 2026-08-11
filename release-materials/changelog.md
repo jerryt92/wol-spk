@@ -1,6 +1,6 @@
 # WOL Manager Changelog
 
-## 1.0.0
+## <version>
 
 Initial release.
 
@@ -28,4 +28,3 @@ Initial release.
 - WOL Manager does not require Docker or an additional runtime on the NAS.
 - The package runs as the DSM package user.
 - Wake-on-LAN success depends on target device BIOS/UEFI, operating system, network adapter, and network broadcast configuration.
-

@@ -101,6 +101,8 @@ local.properties
 
 .gradle
 build/
+!tools/build/
+!tools/build/**
 
 # Ignore Gradle GUI config
 gradle-app.setting

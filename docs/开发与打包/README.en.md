@@ -13,7 +13,8 @@ This document covers WOL Manager code layout, local development, tests, and SPK 
 ├── internal/wol/          # WOL magic packet generation and sending
 ├── synology/              # DSM SPK metadata, scripts, and UI entry
 ├── tools/icongen/         # DSM icon generator
-├── build.sh               # Local package script
+├── build.sh               # macOS/Linux package script
+├── build.ps1              # Windows PowerShell package script
 └── docs/                  # Documentation
 ```
 
@@ -61,10 +62,16 @@ GOCACHE=/private/tmp/wol-spk-gocache go test ./...
 GOCACHE=/private/tmp/wol-spk-gocache ./build.sh
 ```
 
+Windows PowerShell:
+
+```powershell
+./build.ps1
+```
+
 Output:
 
 ```text
-build/WOLManager-1.0.0-x86_64.spk
+build/<package>-<version>-x86_64.spk
 ```
 
 ## GitHub Release
@@ -77,14 +84,14 @@ The project includes a GitHub Actions release workflow:
 
 Triggers:
 
-- Push a `v*` tag, for example `v1.0.0`
-- Run `Release` manually from the GitHub Actions page and enter `v1.0.0`
+- Push a `v*` tag that matches the version in `synology/INFO`.
+- Run `Release` manually from the GitHub Actions page and enter the matching tag.
 
 Commit all changes first, then create and push a tag:
 
 ```sh
-git tag v1.0.0
-git push origin v1.0.0
+git tag v<version>
+git push origin v<version>
 ```
 
 The workflow automatically:
@@ -92,15 +99,15 @@ The workflow automatically:
 - Sets up Go
 - Runs `go test ./...`
 - Runs `./build.sh`
-- Verifies `build/WOLManager-1.0.0-x86_64.spk`
+- Verifies `build/<package>-<version>-x86_64.spk`
 - Verifies that the release tag equals `v` plus the `synology/INFO` version
 - Creates a GitHub Release
 - Uploads the SPK as a release asset
 
-The package name and version are read from `synology/INFO`:
+The package name and version are maintained only in `synology/INFO`:
 
 ```text
-version="1.0.0"
+version="<version>"
 maintainer="jerryt92"
 ```
 

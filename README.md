@@ -26,5 +26,7 @@ Documents are organized by feature:
 The generated package is:
 
 ```text
-build/WOLManager-1.0.0-x86_64.spk
+build/<package>-<version>-x86_64.spk
 ```
+
+`<package>` 和 `<version>` 均从 [`synology/INFO`](synology/INFO) 读取。Windows 可在 PowerShell 中运行 `./build.ps1`。

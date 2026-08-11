@@ -26,7 +26,7 @@ WOL Manager is a native DSM 7 SPK package:
 1. Run `./build.sh` on the build machine.
 2. Open DSM Package Center.
 3. Choose Manual Install.
-4. Select `build/WOLManager-1.0.0-x86_64.spk`.
+4. Select `build/<package>-<version>-x86_64.spk` (the package name and version come from `synology/INFO`).
 5. Open WOL Manager from the DSM main menu after installation.
 
 ## DSM desktop entry

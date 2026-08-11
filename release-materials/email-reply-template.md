@@ -11,7 +11,7 @@ Please find the review materials for WOL Manager below:
 
 Product name: WOL Manager
 Package ID: WOLManager
-Version: 1.0.0
+Version: `<version>` (from `synology/INFO`)
 Category: Utilities
 DSM compatibility: DSM 7.0 or later
 Architecture: x86_64
@@ -43,4 +43,3 @@ Thank you.
 Best regards,
 Jingli Tian
 ```
-

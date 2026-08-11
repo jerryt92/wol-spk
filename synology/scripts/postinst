@@ -1,15 +1,5 @@
 #!/bin/sh
 
-PKG_NAME="${SYNOPKG_PKGNAME:-WOLManager}"
-PKG_ROOT="/var/packages/${PKG_NAME}"
-TARGET_DIR="${SYNOPKG_PKGDEST:-${PKG_ROOT}/target}"
-
-if [ -f "${TARGET_DIR}/ui/images/icon_64.png" ]; then
-  cp "${TARGET_DIR}/ui/images/icon_64.png" "${PKG_ROOT}/PACKAGE_ICON.PNG"
-fi
-
-if [ -f "${TARGET_DIR}/ui/images/icon_256.png" ]; then
-  cp "${TARGET_DIR}/ui/images/icon_256.png" "${PKG_ROOT}/PACKAGE_ICON_256.PNG"
-fi
-
+# Package icons are supplied at the SPK top level. Do not write to
+# /var/packages here: DSM invokes lifecycle scripts as the package user.
 exit 0
