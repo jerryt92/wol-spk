@@ -101,8 +101,34 @@ func archiveEntries(source string) ([]string, error) {
 		entries = append(entries, filepath.ToSlash(relative))
 		return nil
 	})
-	sort.Strings(entries)
+	sort.Slice(entries, func(i, j int) bool {
+		left, right := archiveEntryPriority(entries[i]), archiveEntryPriority(entries[j])
+		if left != right {
+			return left < right
+		}
+		return entries[i] < entries[j]
+	})
 	return entries, err
+}
+
+// DSM's package parser reads the outer SPK metadata before inspecting the
+// remaining payload. Keep its required files at the beginning of the archive
+// instead of relying on filesystem traversal or lexical ordering.
+func archiveEntryPriority(entry string) int {
+	switch {
+	case entry == "INFO":
+		return 0
+	case entry == "package.tgz":
+		return 1
+	case entry == "scripts" || strings.HasPrefix(entry, "scripts/"):
+		return 2
+	case entry == "conf" || strings.HasPrefix(entry, "conf/"):
+		return 3
+	case entry == "PACKAGE_ICON.PNG" || entry == "PACKAGE_ICON_256.PNG":
+		return 4
+	default:
+		return 5
+	}
 }
 
 func writeEntry(writer *tar.Writer, source, relative string, executable, normalizeLF bool) error {

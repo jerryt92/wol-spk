@@ -107,7 +107,7 @@ git push origin v<version>
 包名和版本号只在 `synology/INFO` 中维护：
 
 ```text
-version="<version>"
+version="<版本>" # 例如：1.0.2
 maintainer="jerryt92"
 ```
 

@@ -1,5 +1,12 @@
 #!/bin/sh
 
-rm -f /var/packages/WOLManager/var/devices.json
+# DSM can invoke uninstall lifecycle hooks as part of an upgrade. The upgrade
+# scripts handle preservation, so only remove data for a real uninstall.
+if [ "${SYNOPKG_PKG_STATUS:-}" = "UPGRADE" ]; then
+  exit 0
+fi
+
+PKG_NAME="${SYNOPKG_PKGNAME:-WOLManager}"
+rm -f "/var/packages/${PKG_NAME}/var/devices.json"
 
 exit 0

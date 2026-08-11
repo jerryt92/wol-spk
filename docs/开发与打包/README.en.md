@@ -107,7 +107,7 @@ The workflow automatically:
 The package name and version are maintained only in `synology/INFO`:
 
 ```text
-version="<version>"
+version="<version>" # for example: 1.0.2
 maintainer="jerryt92"
 ```
 

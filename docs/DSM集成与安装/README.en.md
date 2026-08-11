@@ -29,6 +29,17 @@ WOL Manager is a native DSM 7 SPK package:
 4. Select `build/<package>-<version>-x86_64.spk` (the package name and version come from `synology/INFO`).
 5. Open WOL Manager from the DSM main menu after installation.
 
+## Checking GitHub updates
+
+The **Check for Updates** button in the upper-right corner reads the latest stable [GitHub Release](https://github.com/jerryt92/wol-spk/releases/latest) and compares it with the installed version. When an update is available, confirm the download to retrieve the SPK matching the NAS architecture, then install that file manually through DSM Package Center.
+
+Each release must meet both requirements:
+
+- Its tag is `v<version>`, for example `v1.0.3`.
+- Its assets include `WOLManager-<version>-x86_64.spk`.
+
+The app only checks for and downloads updates; it never replaces a running package itself.
+
 ## DSM desktop entry
 
 The package entry is configured in `synology/ui/config` using DSM `app` mode. Clicking the main menu icon creates an internal DSM application window, and `wolmanager.js` embeds `/webman/3rdparty/WOLManager/index.cgi` inside that window.
@@ -57,6 +68,8 @@ Device data is stored at:
 ```text
 /var/packages/WOLManager/var/devices.json
 ```
+
+During an upgrade, the package copies this file to DSM's temporary upgrade workspace and restores it after the new version is installed, so normal upgrades preserve devices. The file is removed only on uninstall.
 
 The uninstall script removes `devices.json`. Export the device list from the app first if you want to keep a backup.
 

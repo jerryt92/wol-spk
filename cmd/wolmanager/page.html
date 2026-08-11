@@ -37,6 +37,8 @@
       margin-bottom: 18px;
     }
     h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 0; }
+    .title-row { display: flex; align-items: baseline; gap: 8px; }
+    .version { color: var(--muted); font-size: 13px; font-weight: 600; }
     .brand { display: flex; align-items: center; gap: 10px; }
     .brand-icon {
       width: 36px;
@@ -190,12 +192,16 @@
         <div class="brand">
           <img class="brand-icon" src="images/icon_256.png" alt="">
           <div>
-            <h1>WOL Manager</h1>
+            <div class="title-row">
+              <h1>WOL Manager</h1>
+              <span class="version">{{.Version}}</span>
+            </div>
             <div class="sub" data-i18n="app.subtitle">DSM 原生局域网唤醒工具</div>
           </div>
         </div>
       </div>
       <div class="toolbar-right">
+        <button id="checkUpdate" type="button" data-i18n="button.checkUpdate">检查更新</button>
         <button class="primary" id="newDevice" data-i18n="button.addDevice">添加设备</button>
       </div>
     </header>
@@ -296,7 +302,8 @@
       port: document.getElementById('port'),
       notes: document.getElementById('notes'),
       reset: document.getElementById('resetForm'),
-      newDevice: document.getElementById('newDevice')
+      newDevice: document.getElementById('newDevice'),
+      checkUpdate: document.getElementById('checkUpdate')
     };
     let devices = [];
     let mode = 'ui';
@@ -590,6 +597,31 @@
       }
     }
 
+    async function checkUpdate() {
+      els.checkUpdate.disabled = true;
+      setStatus(t('status.checkingUpdate'));
+      try {
+        const update = await api('update');
+        if (!update.available) {
+          setStatus(t('status.upToDate', {version: update.currentVersion}), 'ok');
+          return;
+        }
+        const shouldDownload = confirm(t('confirm.updateAvailable', {current: update.currentVersion, latest: update.latestVersion}));
+        if (shouldDownload) {
+          const link = document.createElement('a');
+          link.href = update.downloadURL;
+          link.target = '_blank';
+          link.rel = 'noopener';
+          link.click();
+        }
+        else setStatus(t('status.updateAvailable', {version: update.latestVersion}), 'ok');
+      } catch (err) {
+        setStatus(t('error.updateCheck', {message: err.message}), 'err');
+      } finally {
+        els.checkUpdate.disabled = false;
+      }
+    }
+
     function edit(device) {
       els.formTitle.textContent = t('form.editTitle');
       els.id.value = device.id;
@@ -652,6 +684,7 @@
 
     els.uiMode.onclick = () => setMode('ui');
     els.jsonMode.onclick = () => setMode('json');
+    els.checkUpdate.onclick = checkUpdate;
     els.formatJson.onclick = () => {
       try {
         const list = formatJsonEditor();

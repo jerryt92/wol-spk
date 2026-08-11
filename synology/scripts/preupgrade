@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# DSM may replace the entire package directory during an upgrade. Save the
+# device database in its upgrade workspace before that happens.
+PKG_NAME="${SYNOPKG_PKGNAME:-WOLManager}"
+DATA_FILE="/var/packages/${PKG_NAME}/var/devices.json"
+BACKUP_DIR="${SYNOPKG_TEMP_UPGRADE_FOLDER}/wolmanager"
+
+if [ -f "${DATA_FILE}" ]; then
+  [ -n "${SYNOPKG_TEMP_UPGRADE_FOLDER:-}" ] || exit 1
+  mkdir -p "${BACKUP_DIR}" || exit 1
+  cp -p "${DATA_FILE}" "${BACKUP_DIR}/devices.json" || exit 1
+fi
+
+exit 0

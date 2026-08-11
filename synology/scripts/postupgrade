@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# Restore the database saved by preupgrade. Copy rather than move so DSM keeps
+# its temporary upgrade workspace available for its own cleanup and rollback.
+PKG_NAME="${SYNOPKG_PKGNAME:-WOLManager}"
+BACKUP_FILE="${SYNOPKG_TEMP_UPGRADE_FOLDER}/wolmanager/devices.json"
+DATA_DIR="/var/packages/${PKG_NAME}/var"
+
+if [ -n "${SYNOPKG_TEMP_UPGRADE_FOLDER:-}" ] && [ -f "${BACKUP_FILE}" ]; then
+  mkdir -p "${DATA_DIR}" || exit 1
+  cp -p "${BACKUP_FILE}" "${DATA_DIR}/devices.json" || exit 1
+  chmod 600 "${DATA_DIR}/devices.json" || exit 1
+fi
+
+exit 0

@@ -12,11 +12,24 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 
 	"wolmanager/internal/store"
 	"wolmanager/internal/wol"
 )
+
+const (
+	githubRepository = "jerryt92/wol-spk"
+	githubReleaseAPI = "https://api.github.com/repos/" + githubRepository + "/releases/latest"
+	packageName      = "WOLManager"
+	packageArch      = "x86_64"
+)
+
+// packageVersion is set by the SPK build through -ldflags. Keeping a dev
+// default makes the local development server usable without packaging first.
+var packageVersion = "dev"
 
 //go:embed page.html
 var pageHTML string
@@ -31,6 +44,8 @@ type app struct {
 	store        *store.Store
 	images       http.Handler
 	authenticate func(*http.Request) (string, error)
+	releaseAPI   string
+	httpClient   *http.Client
 }
 
 func main() {
@@ -73,6 +88,8 @@ func newApp(devicePath string, authenticate func(*http.Request) (string, error))
 		store:        store.New(devicePath),
 		images:       http.StripPrefix("/images/", http.FileServer(http.FS(images))),
 		authenticate: authenticate,
+		releaseAPI:   githubReleaseAPI,
+		httpClient:   &http.Client{Timeout: 10 * time.Second},
 	}, nil
 }
 
@@ -115,9 +132,104 @@ func (a *app) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		a.replace(w, r)
 	case "wake":
 		a.wake(w, r)
+	case "update":
+		a.update(w, r)
 	default:
 		http.Error(w, "unknown action", http.StatusNotFound)
 	}
+}
+
+type githubRelease struct {
+	TagName string `json:"tag_name"`
+	HTMLURL string `json:"html_url"`
+	Assets  []struct {
+		Name               string `json:"name"`
+		BrowserDownloadURL string `json:"browser_download_url"`
+	} `json:"assets"`
+}
+
+func (a *app) update(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, fmt.Errorf("method not allowed"), http.StatusMethodNotAllowed)
+		return
+	}
+	if packageVersion == "dev" {
+		writeError(w, fmt.Errorf("update checks are unavailable in development builds"), http.StatusServiceUnavailable)
+		return
+	}
+	request, err := http.NewRequestWithContext(r.Context(), http.MethodGet, a.releaseAPI, nil)
+	if err != nil {
+		writeError(w, err, http.StatusInternalServerError)
+		return
+	}
+	request.Header.Set("Accept", "application/vnd.github+json")
+	request.Header.Set("User-Agent", packageName+"/"+packageVersion)
+	response, err := a.httpClient.Do(request)
+	if err != nil {
+		writeError(w, fmt.Errorf("could not check GitHub releases: %w", err), http.StatusBadGateway)
+		return
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		writeError(w, fmt.Errorf("GitHub release check returned %s", response.Status), http.StatusBadGateway)
+		return
+	}
+	var release githubRelease
+	if err := json.NewDecoder(io.LimitReader(response.Body, 2<<20)).Decode(&release); err != nil {
+		writeError(w, fmt.Errorf("invalid GitHub release response: %w", err), http.StatusBadGateway)
+		return
+	}
+	latest := strings.TrimPrefix(strings.TrimSpace(release.TagName), "v")
+	if comparePackageVersions(latest, packageVersion) <= 0 {
+		writeJSON(w, http.StatusOK, map[string]any{"currentVersion": packageVersion, "latestVersion": latest, "available": false})
+		return
+	}
+	wantedAsset := fmt.Sprintf("%s-%s-%s.spk", packageName, latest, packageArch)
+	for _, asset := range release.Assets {
+		if asset.Name == wantedAsset {
+			writeJSON(w, http.StatusOK, map[string]any{
+				"currentVersion": packageVersion,
+				"latestVersion":  latest,
+				"available":      true,
+				"downloadURL":    asset.BrowserDownloadURL,
+				"releaseURL":     release.HTMLURL,
+			})
+			return
+		}
+	}
+	writeError(w, fmt.Errorf("GitHub release %s does not include %s", release.TagName, wantedAsset), http.StatusBadGateway)
+}
+
+func comparePackageVersions(left, right string) int {
+	parse := func(value string) []int {
+		parts := strings.FieldsFunc(strings.TrimPrefix(value, "v"), func(r rune) bool { return r == '.' || r == '_' || r == '-' })
+		result := make([]int, len(parts))
+		for i, part := range parts {
+			result[i], _ = strconv.Atoi(part)
+		}
+		return result
+	}
+	leftParts, rightParts := parse(left), parse(right)
+	length := len(leftParts)
+	if len(rightParts) > length {
+		length = len(rightParts)
+	}
+	for i := 0; i < length; i++ {
+		var leftPart, rightPart int
+		if i < len(leftParts) {
+			leftPart = leftParts[i]
+		}
+		if i < len(rightParts) {
+			rightPart = rightParts[i]
+		}
+		if leftPart < rightPart {
+			return -1
+		}
+		if leftPart > rightPart {
+			return 1
+		}
+	}
+	return 0
 }
 
 func authenticateDSM(r *http.Request) (string, error) {
@@ -176,7 +288,7 @@ func (a *app) page(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
 	tpl := template.Must(template.New("page").Parse(pageHTML))
-	_ = tpl.Execute(w, nil)
+	_ = tpl.Execute(w, map[string]string{"Version": packageVersion})
 }
 
 func (a *app) list(w http.ResponseWriter) {

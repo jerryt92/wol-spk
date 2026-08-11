@@ -2,6 +2,8 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -20,6 +22,56 @@ func TestAuthenticationRejectsFunctionRoutesWithoutUser(t *testing.T) {
 				t.Fatalf("status = %d, want %d", recorder.Code, http.StatusUnauthorized)
 			}
 		})
+	}
+}
+
+func TestUpdateReportsMatchingGitHubReleaseAsset(t *testing.T) {
+	originalVersion := packageVersion
+	packageVersion = "1.0.2-0001"
+	t.Cleanup(func() { packageVersion = originalVersion })
+	handler := testApp(t, nil)
+	handler.releaseAPI = "https://api.github.test/releases/latest"
+	handler.httpClient = &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		if r.URL.String() != handler.releaseAPI {
+			return nil, fmt.Errorf("request URL = %s", r.URL)
+		}
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Status:     "200 OK",
+			Header:     make(http.Header),
+			Body:       io.NopCloser(strings.NewReader(`{"tag_name":"v1.0.3-0001","html_url":"https://github.com/jerryt92/wol-spk/releases/tag/v1.0.3-0001","assets":[{"name":"WOLManager-1.0.3-0001-x86_64.spk","browser_download_url":"https://example.test/WOLManager-1.0.3-0001-x86_64.spk"}]}`)),
+		}, nil
+	})}
+
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/?action=update", nil))
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", recorder.Code, recorder.Body.String())
+	}
+	if !strings.Contains(recorder.Body.String(), `"available":true`) || !strings.Contains(recorder.Body.String(), `"latestVersion":"1.0.3-0001"`) {
+		t.Fatalf("response = %s, want available update", recorder.Body.String())
+	}
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(request *http.Request) (*http.Response, error) {
+	return f(request)
+}
+
+func TestComparePackageVersions(t *testing.T) {
+	for _, test := range []struct {
+		left, right string
+		want        int
+	}{
+		{"1.0.2-0001", "1.0.2-0001", 0},
+		{"1.0.3-0001", "1.0.2-9999", 1},
+		{"1.0.2-0001", "1.0.2-0002", -1},
+	} {
+		got := comparePackageVersions(test.left, test.right)
+		if (got > 0) != (test.want > 0) || (got < 0) != (test.want < 0) {
+			t.Errorf("comparePackageVersions(%q, %q) = %d, want sign %d", test.left, test.right, got, test.want)
+		}
 	}
 }
 

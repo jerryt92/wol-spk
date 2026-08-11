@@ -10,6 +10,8 @@ import (
 	"regexp"
 )
 
+var dsmPackageVersionPattern = regexp.MustCompile(`^[0-9]+(?:[._-][0-9]+)*$`)
+
 func main() {
 	root, err := os.Getwd()
 	if err != nil {
@@ -43,7 +45,7 @@ func main() {
 	run(root, nil, "go", "run", "./tools/i18ngen")
 	run(root, nil, "go", "run", "./tools/icongen")
 	run(root, reproducibleGoEnv(),
-		"go", "build", "-trimpath", "-mod=readonly", "-buildvcs=false", "-ldflags=-s -w -buildid=wolmanager", "-o", filepath.Join(targetDir, "bin", "wolmanager"), "./cmd/wolmanager")
+		"go", "build", "-trimpath", "-mod=readonly", "-buildvcs=false", "-ldflags=-s -w -buildid=wolmanager -X main.packageVersion="+version, "-o", filepath.Join(targetDir, "bin", "wolmanager"), "./cmd/wolmanager")
 
 	fmt.Println("Preparing DSM package payload...")
 	must(copyDir(filepath.Join(root, "synology", "ui"), filepath.Join(targetDir, "ui")))
@@ -67,14 +69,18 @@ func main() {
 		"-source", spkDir,
 		"-output", spkPath,
 		"-executable", "scripts/postinst",
+		"-executable", "scripts/postupgrade",
 		"-executable", "scripts/postuninst",
 		"-executable", "scripts/preuninst",
+		"-executable", "scripts/preupgrade",
 		"-executable", "scripts/start-stop-status",
 		"-normalize-lf", "INFO",
 		"-normalize-lf", "conf/privilege",
 		"-normalize-lf", "scripts/postinst",
+		"-normalize-lf", "scripts/postupgrade",
 		"-normalize-lf", "scripts/postuninst",
 		"-normalize-lf", "scripts/preuninst",
+		"-normalize-lf", "scripts/preupgrade",
 		"-normalize-lf", "scripts/start-stop-status",
 	)
 	fmt.Printf("Created %s\n", spkPath)
@@ -95,6 +101,9 @@ func packageMetadata(path string) (string, string, error) {
 	packageName, version := read("package"), read("version")
 	if packageName == "" || version == "" {
 		return "", "", fmt.Errorf("failed to read package metadata from %s", path)
+	}
+	if !dsmPackageVersionPattern.MatchString(version) {
+		return "", "", fmt.Errorf("invalid DSM package version %q in %s: use numeric components separated by dots, underscores, or hyphens, for example 1.0.2", version, path)
 	}
 	return packageName, version, nil
 }
