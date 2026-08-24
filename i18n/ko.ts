@@ -6,6 +6,7 @@ const messages = {
   "mode.aria": "관리 모드",
   "mode.ui": "화면 모드",
   "mode.json": "JSON 모드",
+  "button.refresh": "새로 고침",
   "button.import": "가져오기",
   "button.export": "내보내기",
   "status.loading": "불러오는 중",

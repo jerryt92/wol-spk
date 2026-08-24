@@ -6,6 +6,7 @@ const messages = {
   "mode.aria": "Management mode",
   "mode.ui": "UI Mode",
   "mode.json": "JSON Mode",
+  "button.refresh": "Refresh",
   "button.import": "Import",
   "button.export": "Export",
   "status.loading": "Loading",

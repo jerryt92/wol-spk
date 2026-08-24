@@ -6,6 +6,7 @@ const messages = {
   "mode.aria": "管理モード",
   "mode.ui": "UI モード",
   "mode.json": "JSON モード",
+  "button.refresh": "更新",
   "button.import": "インポート",
   "button.export": "エクスポート",
   "status.loading": "読み込み中",

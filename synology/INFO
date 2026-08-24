@@ -1,6 +1,6 @@
 package="WOLManager"
 displayname="WOL Manager"
-version="1.0.1"
+version="1.0.2"
 description="Wake on LAN Manager for Synology DSM"
 maintainer="jerryt92"
 arch="x86_64"

@@ -217,6 +217,7 @@
             </div>
           </div>
           <div class="toolbar-right">
+            <button id="refreshDevices" type="button" data-i18n="button.refresh">刷新</button>
             <button id="importJson" type="button" data-i18n="button.import">导入</button>
             <button id="exportJson" type="button" data-i18n="button.export">导出</button>
             <span class="status" id="status" data-i18n="status.loading">正在加载</span>
@@ -292,6 +293,7 @@
       saveJson: document.getElementById('saveJson'),
       formatJson: document.getElementById('formatJson'),
       reloadJson: document.getElementById('reloadJson'),
+      refreshDevices: document.getElementById('refreshDevices'),
       importJson: document.getElementById('importJson'),
       exportJson: document.getElementById('exportJson'),
       jsonFile: document.getElementById('jsonFile'),
@@ -584,6 +586,8 @@
     }
 
     async function load() {
+      els.refreshDevices.disabled = true;
+      setStatus(t('status.loading'));
       try {
         synoToken = await getDsmSynoToken();
         const data = await api('list');
@@ -594,6 +598,8 @@
         setStatus(t('status.devices', {count: devices.length}), 'ok');
       } catch (err) {
         setStatus(err.message, 'err');
+      } finally {
+        els.refreshDevices.disabled = false;
       }
     }
 
@@ -684,6 +690,7 @@
 
     els.uiMode.onclick = () => setMode('ui');
     els.jsonMode.onclick = () => setMode('json');
+    els.refreshDevices.onclick = load;
     els.checkUpdate.onclick = checkUpdate;
     els.formatJson.onclick = () => {
       try {
